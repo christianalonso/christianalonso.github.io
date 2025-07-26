@@ -207,7 +207,7 @@ inputfile.addEventListener("change",handleFile);
 listaReceta.addEventListener("click",(e)=>{
 
     e.preventDefault()
-    if(e.target.tagName === "A"){
+    if(e.target.tagName === "A" || e.target.tagName === "a"){
         llenarTablaReceta( e.target.parentNode.value)
     }
  

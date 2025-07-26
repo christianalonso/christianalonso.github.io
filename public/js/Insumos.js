@@ -13,6 +13,16 @@ const insumos = () => {
             "TIPO": "MA"
         },
         {
+            "CODIGO": 71575,
+            "DESCRIPCION": "TORTA DE SOYA ARGENTINA",
+            "TIPO": "MA"
+        },
+        {
+            "CODIGO": 98720,
+            "DESCRIPCION": "H INTEGRAL SOYA ARGENTINAS",
+            "TIPO": "MA"
+        },
+        {
             "CODIGO": 98718,
             "DESCRIPCION": "H INTEGRAL SOYA BOLIVIANA COMPRA LOCAL (EVK)",
             "TIPO": "MA"
@@ -153,7 +163,63 @@ const insumos = () => {
             "CODIGO": 71856,
             "DESCRIPCION": "H INTEGRAL SOYA BOLIVIANA COMPRA LOCAL (EVK)",
             "TIPO": "MA"
+        },
+        {
+            "CODIGO": 100216,
+            "DESCRIPCION": "CARBONATO DE CALCIO FINO",
+            "TIPO": "ME"
+        },
+        {
+            "CODIGO": 143714,
+            "DESCRIPCION": "L-GLICINA",
+            "TIPO": "PE"
+        },
+        {
+            "CODIGO": 126044,
+            "DESCRIPCION": "IVERMECTINA 1%",
+            "TIPO": "PE"
+        },
+        {
+            "CODIGO": 138818,
+            "DESCRIPCION": "HP AVISTART",
+            "TIPO": "ME"
+        },
+        {
+            "CODIGO": 64472,
+            "DESCRIPCION": "CLORURO COLINA 75% EUROPEO",
+            "TIPO": "LI"
+        },
+        {
+            "CODIGO": 100904,
+            "DESCRIPCION": "BACTERICIDA LIQUIDO-SAL ZAP",
+            "TIPO": "LI"
+        },
+        {
+            "CODIGO": 87502,
+            "DESCRIPCION": "DI HEPTARINE",
+            "TIPO": "PE"
+        },
+        {
+            "CODIGO": 133917,
+            "DESCRIPCION": "BUTIPHORCE",
+            "TIPO": "PE"
+        },
+        {
+            "CODIGO": 82531,
+            "DESCRIPCION": "ENRAMICINA 80",
+            "TIPO": "PE"
+        },
+        {
+            "CODIGO": 71612,
+            "DESCRIPCION": "HALQUINOL",
+            "TIPO": "PE"
+        },
+        {
+            "CODIGO": 82520,
+            "DESCRIPCION": "NUCLEO POLLO 0",
+            "TIPO": "PE"
         }
+        
 
     ]
 
