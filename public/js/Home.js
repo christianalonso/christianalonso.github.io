@@ -8,7 +8,9 @@ const modalAddPremix = document.getElementById("addPremixModal")
 const btnAddNewPremix = document.getElementById("addNewPremix")
 
 modalAddPremix.addEventListener('shown.bs.modal', (e) => {
-    btnAddNewPremix.value = e.relatedTarget.name
+    const name = e.relatedTarget.name
+    btnAddNewPremix.value = name
+    document.querySelector("#modalNewPremixLabel").textContent =`Nuevo Insumo Grupo ${name[5]}`
 })
 
 btnAddNewPremix.addEventListener("click",(e)=>{
@@ -269,8 +271,8 @@ function llenarTablaReceta(codReceta){
 
     const sumaTotal = (matriz) => {
         const total = matriz.reduce((acumulador,value) => acumulador + value.PESOS ,0)
-        
-        return parseFloat(total.toFixed(2))
+        const batch = total *4
+        return parseFloat(batch.toFixed(2))
     }
     
     myDataChart.labels = ["Liquido","Macros","Premix","Medios"]

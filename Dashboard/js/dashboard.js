@@ -6,51 +6,11 @@ let myChart ;
 
   feather.replace({ 'aria-hidden': 'true' })
 
-  //Graphs
-  // const ctx = document.getElementById('myChart')
-  // // eslint-disable-next-line no-unused-vars
-  // const myChart = new Chart(ctx, {
-  //   type: 'line',
-  //   data: {s
-  //     labels: [
-  //       'Sunday',
-  //       'Monday',
-  //       'Tuesday',
-  //       'Wednesday',
-  //       'Thursday',
-  //       'Friday',
-  //       'Saturday'
-  //     ],
-  //     datasets: [{
-  //       data: [
-  //         15339,
-  //         21345,
-  //         18483,
-  //         24003,
-  //         23489,
-  //         24092,
-  //         12034
-  //       ],
-  //       lineTension: 0,
-  //       backgroundColor: 'transparent',
-  //       borderColor: '#007bff',
-  //       borderWidth: 4,
-  //       pointBackgroundColor: '#007bff'
-  //     }]
-  //   },
-  //   options: {
-  //     scales: {
-  //       yAxes: [{
-  //         ticks: {
-  //           beginAtZero: false
-  //         }
-  //       }]
-  //     },
-  //     legend: {
-  //       display: false
-  //     }
-  //   }
-  // })
+  const percent = (value)=>{
+      const valor = (value * 100) / 4000
+      const porcent =valor.toFixed(2)+"%"
+      return porcent
+  }
 
   const ctx = document.getElementById('myChart');
 
@@ -58,15 +18,9 @@ let myChart ;
       labels: ['Liquidos','Macros','Premix','Medios'],
       datasets: [{
         label: 'Peso Total ',
-        data: [15339,21345,18483,24003],
+        data: [60,3670,80,190],
         lineTension:0,
         borderWidth: 1,
-        // backgroundColor:[
-        //   '#ff6384',
-				// 	'#36a2eb',
-				// 	'#cc65fe',
-				// 	'#ffce56'
-				// 	]
         backgroundColor:[
           'rgba(255, 26, 104, 1)',
           'rgba(255, 159, 64, 1)',
@@ -94,18 +48,26 @@ let myChart ;
           position:"top"
         },
         datalabels:{
-          color:"black",
-          anchor:"end",
-          font:{
-            weight:"bold",
-            size:13
-          },
-          formatter: (value,context) => {
-              const valor = (value * 100) / 1000
-              const porcent =valor.toFixed(2)+"%"
-              return porcent
+            color:"black",
+            anchor:"end",
+            font:{
+              weight:"bold",
+              size:13
+            },
+            formatter: (value) => {
+                return percent(value)
+            }
+        },
+        tooltip:{
+              callbacks:{
+                    label: function(context) {
+                      return `Peso Total: ${context.parsed.toFixed(2)} kg`
+                  },
+                  footer:function(context){
+                      return `Porcentaje: ${percent(context[0].parsed)}`
+                  }
+              }
           }
-        }
       }
     }
   }
