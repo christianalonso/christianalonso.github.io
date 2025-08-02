@@ -4,12 +4,12 @@ const insumos = () => {
 
         {
             "CODIGO": 71580,
-            "DESCRIPCION": "MAIZ ARG MN ATACAMA (EVK)",
+            "DESCRIPCION": "MAIZ ARGENTINO",
             "TIPO": "MA"
         },
         {
             "CODIGO": 71578,
-            "DESCRIPCION": "TORTA DE SOYA PARAGUAYA COREFORTUNE (EVK)",
+            "DESCRIPCION": "TORTA DE SOYA PARAGUAYA",
             "TIPO": "MA"
         },
         {
@@ -19,12 +19,12 @@ const insumos = () => {
         },
         {
             "CODIGO": 98720,
-            "DESCRIPCION": "H INTEGRAL SOYA ARGENTINAS",
+            "DESCRIPCION": "H INTEGRAL SOYA ARGENTINA",
             "TIPO": "MA"
         },
         {
             "CODIGO": 98718,
-            "DESCRIPCION": "H INTEGRAL SOYA BOLIVIANA COMPRA LOCAL (EVK)",
+            "DESCRIPCION": "H INTEGRAL SOYA BOLIVIANA COMPRA LOCAL",
             "TIPO": "MA"
         },
         {
@@ -220,7 +220,6 @@ const insumos = () => {
             "TIPO": "PE"
         }
         
-
     ]
 
     return json

@@ -6,6 +6,7 @@ const marco = document.querySelector("#toPrint")
 const pathPrint = "Template/Print.html"
 const modalAddPremix = document.getElementById("addPremixModal")
 const btnAddNewPremix = document.getElementById("addNewPremix")
+ 
 
 modalAddPremix.addEventListener('shown.bs.modal', (e) => {
     const name = e.relatedTarget.name
@@ -18,11 +19,12 @@ btnAddNewPremix.addEventListener("click",(e)=>{
     const nombreInsumo = document.getElementById("txtNombreInsumo")
     const pesoInsumo = document.getElementById("txtPesoInsumo")
     const borderColor = claseDeEstilo(e.target.value)
-       
+
     addItemList(borderColor.border,{
-        CODIGO:"G0_"+nombreInsumo,
-        DESCRIPCION:nombreInsumo.value.toUpperCase(),
-        PESOS:pesoInsumo.value
+        codInsumo:"G0_"+nombreInsumo,
+        descripcion:nombreInsumo.value.toUpperCase(),
+        displayBatch: (pesoInsumo.value * 4).toFixed(2)
+        
     },{name:e.target.value,id:"G0_"+nombreInsumo,})
     
     nombreInsumo.value = ""
@@ -135,12 +137,11 @@ const handleFile = (e)=>{
     let regex = /(.xls|.xlsx)$/
 
     if(!file){
-        showMessage("Archivo no seleccionado. Porfavor elija un archivo","error");
         return
     }
 
     if(!regex.test(file.name)){
-        showMessage("Archivo no soportado. Porfavor seleccionar un arhivo Excel","error")
+        utils.myAlert({icon:"error",title:"Oops...Algo salio mal",text:"Al parecer intentaste subir un archivo diferente a un libro de excel"})
         return
     }
 
@@ -149,57 +150,33 @@ const handleFile = (e)=>{
         data.init(reader.result)
 
         if(!validFiedls(data.header())){
-            showMessage("El archivo no cumple con los campos requeridos para ser una Formula de pesaje","error")
+            
+            utils.myAlert({icon:"error",title:"Oops...Algo salio mal",text:"El archivo que intentaste subir no es una formula de batcheo"})
             inputfile.value = null
             return
         }
 
         fillList("listReceta",data.getUniquesCode());
         document.getElementById("nameFile").textContent = file.name
-        showMessage("El paquete se cargo correctamente","success");
+       
+        if(data.insumoNoRegistrado.length > 0){
+            utils.myAlert({icon:"error",title:"Cuidado...!",text:`
+                El paquete contiene insumos que no se encuentran registrados en la base de datos, comunicarse con el administrador.
+                `})
+        }else{
+            utils.myAlert({icon:"success",title:"Bien Hecho...!",text:"El paquete se cargo correctamente"})
+        }
+       
         llenarTablaReceta(139590)
                 
     } 
     
     reader.error = () =>{
-        showMessage("Error al leer el archivo. Porfavor intentelo nuevamente","error")
+        utils.myAlert({icon:"error",title:"Oops...Algo salio mal!",text:"El archivo no se pudo cargar, intentelo de nuevo mas tarde"})
     }
 
     reader.readAsArrayBuffer(file)
 
-}
-
-const showMessage = (message,type) =>{
-
-    let messageDisplay = document.getElementById("message")
-    let className = "";
-    messageDisplay.textContent = "";
-    messageDisplay.textContent = message;
-    
-    switch (type) {
-        case "error":
-            className = "alert-danger"
-            break;
-        
-        case "success":
-            className = "alert-success"
-            break;
-
-        default:
-            className = "alert-warning"
-            break;
-    }
-    
-   
-    messageDisplay.classList.add(className,"showMessage")
-
-    setTimeout(() =>{
-        messageDisplay.classList.remove("showMessage")
-    },2000)
-
-    setTimeout(() =>{
-        messageDisplay.classList.remove(className)
-    },3000)
 }
 
 inputfile.addEventListener("change",handleFile);
@@ -229,10 +206,10 @@ function llenarTablaReceta(codReceta){
         }
 
     title.textContent = dataList[0].receta+ " " + dataList[0].codPT
-    tableTitle.value = dataList[0].receta 
-
+    tableTitle.value = dataList[0].codPT +" - "+ dataList[0].receta 
+   
     dataList.forEach((element,index) => {
-        
+            
             const tr = document.createElement("tr")
 
             const num = Object.assign(document.createElement("td"),{
@@ -251,12 +228,12 @@ function llenarTablaReceta(codReceta){
             tr.appendChild(descripcion)
 
             const pesos = Object.assign(document.createElement("td"),{
-                textContent:(element.pesos*1).toFixed(2)
+                textContent: element.pesos.toFixed(2)
             })
             tr.appendChild(pesos)
 
             const batch = Object.assign(document.createElement("td"),{
-                textContent:(element.pesos * 4.).toFixed(2)
+                textContent: element.displayBatch
             })
             tr.appendChild(batch)
 
@@ -264,21 +241,69 @@ function llenarTablaReceta(codReceta){
             table.appendChild(tbody)
 
     });
-    const macros = data.getTipoInsumosReceta(codPT,"MA")
-    const medios = data.getTipoInsumosReceta(codPT,"ME")
-    const premix = data.getTipoInsumosReceta(codPT,"PE")
-    const liquido = data.getTipoInsumosReceta(codPT,"LI")
+    const insumos = assembleTypeInsumos(codPT,["MA","PE","LI","ME"])
+    pesoTotalPorReceta(insumos)
+    updateChart(insumos)
+    llenarListPremix(insumos.premix)
+}
 
-    const sumaTotal = (matriz) => {
-        const total = matriz.reduce((acumulador,value) => acumulador + value.PESOS ,0)
-        const batch = total *4
-        return parseFloat(batch.toFixed(2))
+const updateChart = (assemble) => {
+    const props = ["premix","medios","liquidos","macros"]
+    for (let i = 0; i < props.length; i++) {
+        myDataChart.datasets[i].data = assemble[props[i]]
     }
-    
-    myDataChart.labels = ["Liquido","Macros","Premix","Medios"]
-    myDataChart.datasets[0].data = [sumaTotal(liquido),sumaTotal(macros),sumaTotal(premix),sumaTotal(medios)]  
     myChart.update()
-    llenarListPremix(premix)
+}
+
+const pesoTotalPorReceta = (assembleInsumos) => {
+    
+    for (const key in assembleInsumos) {
+        data.pesoTotalPorReceta[key] = assembleInsumos[key].reduce((collector,{batch}) => {
+            return collector + batch
+        },0)
+    }
+}
+
+const assembleTypeInsumos = (idReceta,tipos) => {
+    
+    const roots = tipos.map((item) => {
+        let root = ""
+
+        switch (item) {
+            case "MA":
+                root="macros"
+                break;
+
+            case "ME":
+                root="medios"
+                break;
+
+            case "PE":
+                root="premix"
+                break;
+        
+            case "LI":
+                root="liquidos"
+                break;
+        }
+
+        return root
+        
+    })
+
+    const insumos = {
+        macros:[],
+        medios:[],
+        premix:[],
+        liquidos:[]
+    }
+
+   for (let i = 0; i < tipos.length; i++) {
+        insumos[roots[i]] = data.filterTypeInsumo(idReceta,tipos[i])
+   }
+   
+   return insumos
+    
 }
 
 const listInsumosPremix = document.getElementById("listInsumosPremix")
@@ -316,7 +341,7 @@ listInsumosPremix.addEventListener("click",(e) => {
         /** EDITAR */   
         
         if(edit >= 0){
-            let toMove = document.getElementById(value.CODIGO)
+            let toMove = document.getElementById(value.codInsumo)
             let originFromToMove = toMove.parentElement.id
             let destiny = document.getElementById(target.name)
 
@@ -337,7 +362,7 @@ listInsumosPremix.addEventListener("click",(e) => {
         /** ELIMINAR  */
 
         if(target.checked === false){
-            removeItemList(target.name,value.CODIGO)
+            removeItemList(target.name,value.codInsumo)
         }
     }
 
@@ -347,14 +372,14 @@ function addItemList(colorBorde,data,target){
 
     let lista = document.getElementById(target.name)
     const listItem = Object.assign(document.createElement("li"),{
-        id:data.CODIGO,
+        id:data.codInsumo,
         className: `list-item ${colorBorde} border border-2 py-1 px-1`,
         draggable:true
     })
 
     listItem.innerHTML = `<div class="details fw-bold">
-                        <span class="descripcion">${data.DESCRIPCION}</span>
-                        <span class="pesos">${(data.PESOS * 4 ).toFixed(2)}</span>
+                        <span class="descripcion">${data.descripcion}</span>
+                        <span class="pesos">${data.displayBatch}</span>
                         <span class="incremento"></span>
                     </div>
                     <div class="d-flex align-items-center">
@@ -395,15 +420,15 @@ function pesoTotal (idLista) {
     grupo.parentElement.nextElementSibling.innerHTML = `Peso total : ${ponderado.toFixed(2)} Kg`
 }
 
-const llenarListPremix = (data) => {
+const llenarListPremix = (listPremix) => {
     
     let incremento = 0
     listInsumosPremix.innerHTML = ""
     const inputs = (values) => {
             let elementos = "";
             for (let i = 1; i <= 3; i++) {
-                elementos += `<input type="checkbox" class="btn-check" id="G${i}_${values.CODIGO}" value='${JSON.stringify(values)}' name="grupo${i}" autocomplete="off">
-                                    <label class="btn btn-outline-secondary" for="G${i}_${values.CODIGO}">G${i}</label>`
+                elementos += `<input type="checkbox" class="btn-check" id="G${i}_${values.codInsumo}" value='${JSON.stringify(values)}' name="grupo${i}" autocomplete="off">
+                                    <label class="btn btn-outline-secondary" for="G${i}_${values.codInsumo}">G${i}</label>`
                 
             }
             return elementos
@@ -418,12 +443,12 @@ const llenarListPremix = (data) => {
         
     }
     
-    data.forEach((element) => {
-        incremento = incremento + (element.PESOS * 4)
-        const itemList = `<li class="list-item border-secondary border border-2 px-2 py-1" name="${element.CODIGO}">
+    listPremix.forEach((element) => {
+        incremento = incremento + element.batch
+        const itemList = `<li class="list-item border-secondary border border-2 px-2 py-1" name="${element.codInsumo}">
                             <div class="details fw-bold">
-                                <span class="descripcion">${element.DESCRIPCION}</span>
-                                <span class="pesos">${(element.PESOS * 4).toFixed(2)}</span>
+                                <span class="descripcion">${element.descripcion}</span>
+                                <span class="pesos">${element.displayBatch}</span>
                                 <span class="incremento">${(incremento).toFixed(2)}</span>
                             </div>
                             <div class="d-flex align-items-center">
@@ -436,7 +461,7 @@ const llenarListPremix = (data) => {
         
         listInsumosPremix.innerHTML += itemList
     });
-    document.getElementById("pesoTotal").textContent = `Peso total : ${(incremento).toFixed(2)} Kg`
+    document.getElementById("pesoTotal").textContent = `Peso total : ${data.pesoTotalPorReceta.premix.toFixed(2)} Kg`
 }
 
 const borderColor = { danger:"border-danger",warning:"border-warning",primary:"border-primary",secondary:"border-secondary" }

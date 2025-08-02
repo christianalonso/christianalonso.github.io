@@ -1,8 +1,18 @@
 class DataExcel{
     
     constructor(){
-       this.data
+        this.insumos = insumos();
+        this.data = []
+        this.receta = []
+        this.insumoNoRegistrado=[]
     }
+    pesoTotalPorReceta = {
+        macros:0.00,
+        medios:0.00,
+        premix:0.00,
+        liquidos:0.00
+    }
+    factor = 4
 
     init = (cont) =>{
         const workbook = XLSX.read(cont);
@@ -19,11 +29,26 @@ class DataExcel{
                     ]
                 });
         this.data = content;
-        this.insumos = insumos();
+        const rows = this.data.slice(1,this.data.length)
+
+        this.receta = rows.map((items) => {
+            const row = items
+            const pesoBatch = items.pesos * this.factor
+            row.batch = pesoBatch
+            row.displayBatch = pesoBatch.toFixed(2)
+
+            if(this.buscarInsumo(items.codInsumo) === undefined){
+                this.insumoNoRegistrado.push(items) 
+            }
+            return row
+        });
+
+        // console.log(this.receta)
+        
     }
 
     rows = () =>{
-        return this.data.slice(1,this.data.lenght)
+        return this.receta  
     }
 
     header = () =>{
@@ -60,26 +85,30 @@ class DataExcel{
     
     }
 
-    getTipoInsumosReceta = (idReceta,type) => {
+    buscarInsumo = (codInsumo) => {
+        const insumo = this.insumos.find(({CODIGO}) => CODIGO === codInsumo)
+        return insumo
+    }
 
-        const arr = []
+    filterTypeInsumo = (idReceta,tipoInsumo) => {
+
         const receta = this.filterProduct(idReceta)
+        const insumos = this.insumos.filter(({TIPO}) => TIPO === tipoInsumo)
+        
+        const potentialMatch = (item) => {
 
-        receta.forEach(element => {
+            let flag = false
+            const collision = insumos.find(({CODIGO}) => CODIGO === item.codInsumo)
             
-            const match = this.insumos.find( (insumo) =>{
-                return element.codInsumo === insumo.CODIGO && insumo.TIPO === type
-            })
-
-            if(match){
-                match.PESOS = element.pesos
-                arr.push(match)
+            if(collision){
+                flag = true
             }
+            
+            return flag
+        }
 
-        });
-
-        return arr
-
+        const match = receta.filter(potentialMatch)
+        return match
     }
 
 }
