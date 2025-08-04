@@ -30,7 +30,7 @@
         printable.innerHTML = localStorage.getItem("content")
         if(localStorage.getItem("export") != null){
 
-            const titlePDF = document.querySelector("h4").textContent.trimEnd()
+            const titlePDF = document.querySelector("h5").textContent.trimEnd()
             html2canvas(printable,{scale:2}).then(canvas => {
                 const imgData = canvas.toDataURL('image/png');
                 const pdf = new jspdf.jsPDF();

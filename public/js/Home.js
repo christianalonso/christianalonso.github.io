@@ -160,6 +160,9 @@ const handleFile = (e)=>{
         document.getElementById("nameFile").textContent = file.name
        
         if(data.insumoNoRegistrado.length > 0){
+            
+            
+
             utils.myAlert({icon:"error",title:"Cuidado...!",text:`
                 El paquete contiene insumos que no se encuentran registrados en la base de datos, comunicarse con el administrador.
                 `})
