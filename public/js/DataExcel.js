@@ -7,10 +7,10 @@ class DataExcel{
         this.insumoNoRegistrado=[]
     }
     pesoTotalPorReceta = {
-        macros:0.00,
-        medios:0.00,
-        premix:0.00,
-        liquidos:0.00
+        macros:0,
+        medios:0,
+        premix:0,
+        liquidos:0,
     }
     factor = 4
 
@@ -30,7 +30,7 @@ class DataExcel{
                 });
         this.data = content;
         const rows = this.data.slice(1,this.data.length)
-
+        
         this.receta = rows.map((items) => {
             const row = items
             const pesoBatch = items.pesos * this.factor
@@ -40,11 +40,10 @@ class DataExcel{
             if(this.buscarInsumo(items.codInsumo) === undefined){
                 this.insumoNoRegistrado.push(items) 
             }
+            
             return row
         });
 
-        // console.log(this.receta)
-        
     }
 
     rows = () =>{

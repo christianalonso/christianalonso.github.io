@@ -6,7 +6,7 @@ const marco = document.querySelector("#toPrint")
 const pathPrint = "Template/Print.html"
 const modalAddPremix = document.getElementById("addPremixModal")
 const btnAddNewPremix = document.getElementById("addNewPremix")
- 
+
 
 modalAddPremix.addEventListener('shown.bs.modal', (e) => {
     const name = e.relatedTarget.name
@@ -52,7 +52,7 @@ function crearTablaPesaje(){
     const container = document.createElement("div")
 
     container.innerHTML = `<div class="table-title">
-                                <h4>${document.getElementById("tableTitle").value}</4>
+                                <h5>${document.getElementById("tableTitle").value}</5>
                             </div>`
 
     for (let i = 1; i <= 3; i++) {
@@ -243,16 +243,8 @@ function llenarTablaReceta(codReceta){
     });
     const insumos = assembleTypeInsumos(codPT,["MA","PE","LI","ME"])
     pesoTotalPorReceta(insumos)
-    updateChart(insumos)
+    graphicPie.update(insumos)
     llenarListPremix(insumos.premix)
-}
-
-const updateChart = (assemble) => {
-    const props = ["premix","medios","liquidos","macros"]
-    for (let i = 0; i < props.length; i++) {
-        myDataChart.datasets[i].data = assemble[props[i]]
-    }
-    myChart.update()
 }
 
 const pesoTotalPorReceta = (assembleInsumos) => {
@@ -373,7 +365,7 @@ function addItemList(colorBorde,data,target){
     let lista = document.getElementById(target.name)
     const listItem = Object.assign(document.createElement("li"),{
         id:data.codInsumo,
-        className: `list-item ${colorBorde} border border-2 py-1 px-1`,
+        className: `list-item ${colorBorde} border border-3 py-1 px-1`,
         draggable:true
     })
 
@@ -388,7 +380,8 @@ function addItemList(colorBorde,data,target){
                         </button>
                         <i class="bi bi-grip-vertical"></i> 
                     </div>`
-    sortableItem(listItem)
+    // sortableItem(listItem)
+    utils.sortableItem(listItem,(item) => { pesoTotal(item.parentElement.id) })
     lista.appendChild(listItem)
     pesoTotal(target.name)
     window.scrollTo(0, document.body.scrollHeight);
@@ -445,7 +438,7 @@ const llenarListPremix = (listPremix) => {
     
     listPremix.forEach((element) => {
         incremento = incremento + element.batch
-        const itemList = `<li class="list-item border-secondary border border-2 px-2 py-1" name="${element.codInsumo}">
+        const itemList = `<li class="list-item border-secondary border border-3 px-2 py-1" name="${element.codInsumo}">
                             <div class="details fw-bold">
                                 <span class="descripcion">${element.descripcion}</span>
                                 <span class="pesos">${element.displayBatch}</span>
@@ -522,94 +515,8 @@ function deleteItemList(e) {
     
 }
 
-draggable();
+utils.draggable({drag:".draggable",grab:".modal-header"})
 
-
-function draggable (){
-
-    const drag = document.querySelector(".draggable")
-    const grab = document.querySelector(".modal-header")
-    grab.style.cursor = "grab"
-    let isDraggin = false
-    let locationX, locationY
-
-    drag.addEventListener("mousedown",(e) => {
-        
-        if(e.target === grab){
-            isDraggin = true
-            locationX = e.clientX - drag.offsetLeft
-            locationY = e.clientY - drag.offsetTop
-            grab.style.cursor = "grabbing"
-        }
-        
-    })
-
-    drag.addEventListener("mousemove",(e) => {
-        
-        if(isDraggin){
-            drag.style.left = e.clientX - locationX + "px"
-            drag.style.top = e.clientY - locationY + "px"
-        }
-
-    })
-
-    drag.addEventListener("mouseup",() => {
-        isDraggin = false
-        grab.style.cursor = "grab"
-    })
-
-    const modal = document.getElementById("exampleModal")
-    modal.addEventListener("hidden.bs.modal",() => {
-        drag.style.left = 0 + "px"
-        drag.style.top = 0 + "px"
-    })
-    
-}
-
-/////////////////////////////////////////////////////////////////////////////////////////
-
-function sortableItem(listItem){
-
-    this.draggable = ""
-    this.dragginPositionItem =""     
-
-    listItem.addEventListener("dragstart",(e)=>{
-
-        setTimeout(()=>{ listItem.classList.add("dragging") },0)
-        this.draggable = e.target
-        this.dragginPositionItem = [...listItem.parentElement.children].indexOf(this.draggable)
-        
-    })  
-
-    listItem.addEventListener("dragend",()=>{
-        listItem.classList.remove("dragging") 
-    })
-
-    listItem.addEventListener("dragover",(e)=>{
-        e.preventDefault()
-    })
-
-    listItem.addEventListener("drop",(e) => {
-        
-        if(this.draggable.parentElement === e.currentTarget.parentElement){
-
-            const nextSibling = this.draggable.nextElementSibling
-            const dropPosition = [...listItem.parentElement.children].indexOf(e.currentTarget)
-            const bypass = this.dragginPositionItem - dropPosition
-            const sibling = this.dragginPositionItem < dropPosition ? e.currentTarget.nextElementSibling : e.currentTarget
-            listItem.parentElement.insertBefore(this.draggable,sibling)
-            
-            if(bypass != -1 && bypass != 0 && bypass != 1){
-                listItem.parentElement.insertBefore(e.currentTarget,nextSibling)
-            }
-            pesoTotal(listItem.parentElement.id) 
-        }
-
-        
-    })
-
-
-}
 
 
 
