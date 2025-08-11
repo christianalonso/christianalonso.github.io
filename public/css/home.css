@@ -29,12 +29,6 @@
     align-items: center;
     width: 80%;
 }
-.separator{
-    height: 16px;
-    width: 1px;
-    border: 1px solid grey;
-    margin: 0 6px;
-}
 .descripcion{
     width: 60%;
 }

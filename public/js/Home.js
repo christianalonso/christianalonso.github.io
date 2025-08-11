@@ -7,6 +7,13 @@ const pathPrint = "Template/Print.html"
 const modalAddPremix = document.getElementById("addPremixModal")
 const btnAddNewPremix = document.getElementById("addNewPremix")
 
+function showBatch(peso){
+    return utils.pesoACadena(utils.toBatch(peso,4))
+}
+
+function showPeso(peso){
+    return utils.pesoACadena(utils.toDecimal(peso))
+}
 
 modalAddPremix.addEventListener('shown.bs.modal', (e) => {
     const name = e.relatedTarget.name
@@ -18,12 +25,12 @@ btnAddNewPremix.addEventListener("click",(e)=>{
 
     const nombreInsumo = document.getElementById("txtNombreInsumo")
     const pesoInsumo = document.getElementById("txtPesoInsumo")
-    const borderColor = claseDeEstilo(e.target.value)
+    const borderColor = utils.claseDeEstilo(e.target.value)
 
     addItemList(borderColor.border,{
         codInsumo:"G0_"+nombreInsumo,
         descripcion:nombreInsumo.value.toUpperCase(),
-        displayBatch: (pesoInsumo.value * 4).toFixed(2)
+        pesos: pesoInsumo.value
         
     },{name:e.target.value,id:"G0_"+nombreInsumo,})
     
@@ -147,30 +154,25 @@ const handleFile = (e)=>{
 
     reader.onload = (e) =>{
 
-        data.init(reader.result)
+        Receta.cargarArchivoExcel(reader.result)
 
-        if(!validFiedls(data.header())){
+        if(!validFiedls(Receta.header())){
             
             utils.myAlert({icon:"error",title:"Oops...Algo salio mal",text:"El archivo que intentaste subir no es una formula de batcheo"})
             inputfile.value = null
             return
         }
-
-        fillList("listReceta",data.getUniquesCode());
-        document.getElementById("nameFile").textContent = file.name
        
-        if(data.insumoNoRegistrado.length > 0){
-            
-            
-
+        if(Receta.insumoNoRegistrado.length > 0){
             utils.myAlert({icon:"error",title:"Cuidado...!",text:`
                 El paquete contiene insumos que no se encuentran registrados en la base de datos, comunicarse con el administrador.
                 `})
         }else{
             utils.myAlert({icon:"success",title:"Bien Hecho...!",text:"El paquete se cargo correctamente"})
         }
-       
-        llenarTablaReceta(139590)
+        document.getElementById("nameFile").textContent = file.name
+        fillList("listReceta",Receta.getRecetas());
+        realeaseReceta(139590);
                 
     } 
     
@@ -182,21 +184,31 @@ const handleFile = (e)=>{
 
 }
 
+function realeaseReceta (codPT) {
+    Receta.prepararReceta(codPT)
+    displayData(codPT)
+}
+
+function displayData(codPT){
+    graphicPie.update(Receta.insumosReceta)
+    llenarTablaReceta(codPT)
+    llenarListPremix(Receta.insumosReceta.premix)
+}
+
 inputfile.addEventListener("change",handleFile);
 
 listaReceta.addEventListener("click",(e)=>{
 
     e.preventDefault()
     if(e.target.tagName === "A" || e.target.tagName === "a"){
-        llenarTablaReceta( e.target.parentNode.value)
+        realeaseReceta(e.target.parentNode.value)
     }
  
 })
 
-function llenarTablaReceta(codReceta){
+function llenarTablaReceta(codPT){
     
-    const codPT = codReceta
-    const dataList = data.filterProduct(codPT)
+    const receta = Receta.getReceta(codPT)
     const table = document.getElementById("tableReceta")
     const title = document.getElementById("titleReceta")
     const tbody = document.createElement("tbody")
@@ -208,10 +220,10 @@ function llenarTablaReceta(codReceta){
             tbodyDelete[3].remove()
         }
 
-    title.textContent = dataList[0].receta+ " " + dataList[0].codPT
-    tableTitle.value = dataList[0].codPT +" - "+ dataList[0].receta 
-   
-    dataList.forEach((element,index) => {
+    title.textContent = receta[0].receta+ " " + receta[0].codPT
+    tableTitle.value = receta[0].codPT +" - "+ receta[0].receta 
+
+    receta.forEach((element,index) => {
             
             const tr = document.createElement("tr")
 
@@ -231,12 +243,12 @@ function llenarTablaReceta(codReceta){
             tr.appendChild(descripcion)
 
             const pesos = Object.assign(document.createElement("td"),{
-                textContent: element.pesos.toFixed(2)
+                textContent: showPeso(element.pesos)
             })
             tr.appendChild(pesos)
 
             const batch = Object.assign(document.createElement("td"),{
-                textContent: element.displayBatch
+                textContent: showBatch(element.pesos)
             })
             tr.appendChild(batch)
 
@@ -244,60 +256,7 @@ function llenarTablaReceta(codReceta){
             table.appendChild(tbody)
 
     });
-    const insumos = assembleTypeInsumos(codPT,["MA","PE","LI","ME"])
-    pesoTotalPorReceta(insumos)
-    graphicPie.update(insumos)
-    llenarListPremix(insumos.premix)
-}
-
-const pesoTotalPorReceta = (assembleInsumos) => {
     
-    for (const key in assembleInsumos) {
-        data.pesoTotalPorReceta[key] = assembleInsumos[key].reduce((collector,{batch}) => {
-            return collector + batch
-        },0)
-    }
-}
-
-const assembleTypeInsumos = (idReceta,tipos) => {
-    
-    const roots = tipos.map((item) => {
-        let root = ""
-
-        switch (item) {
-            case "MA":
-                root="macros"
-                break;
-
-            case "ME":
-                root="medios"
-                break;
-
-            case "PE":
-                root="premix"
-                break;
-        
-            case "LI":
-                root="liquidos"
-                break;
-        }
-
-        return root
-        
-    })
-
-    const insumos = {
-        macros:[],
-        medios:[],
-        premix:[],
-        liquidos:[]
-    }
-
-   for (let i = 0; i < tipos.length; i++) {
-        insumos[roots[i]] = data.filterTypeInsumo(idReceta,tipos[i])
-   }
-   
-   return insumos
     
 }
 
@@ -330,15 +289,17 @@ listInsumosPremix.addEventListener("click",(e) => {
             oldTheme = target.name
             theme= "default"
         }
-        const className = claseDeEstilo(target.name)
+        const className = utils.claseDeEstilo(target.name)
         changeThemeItem(`[name='${target.id.slice(3,target.id.length)}']`,oldTheme,theme)
        
         /** EDITAR */   
         
         if(edit >= 0){
-            let toMove = document.getElementById(value.codInsumo)
-            let originFromToMove = toMove.parentElement.id
-            let destiny = document.getElementById(target.name)
+            const toMove = document.getElementById(value.codInsumo)
+            const btnDeleteItem = toMove.querySelector("button") 
+            btnDeleteItem.name = target.id
+            const originFromToMove = toMove.parentElement.id
+            const destiny = document.getElementById(target.name)
 
             destiny.appendChild(toMove)
             pesoTotal(originFromToMove)
@@ -374,7 +335,7 @@ function addItemList(colorBorde,data,target){
 
     listItem.innerHTML = `<div class="details fw-bold">
                         <span class="descripcion">${data.descripcion}</span>
-                        <span class="pesos">${data.displayBatch}</span>
+                        <span class="pesos">${showBatch(data.pesos)}</span>
                         <span class="incremento"></span>
                     </div>
                     <div class="d-flex align-items-center">
@@ -383,7 +344,7 @@ function addItemList(colorBorde,data,target){
                         </button>
                         <i class="bi bi-grip-vertical"></i> 
                     </div>`
-    // sortableItem(listItem)
+    
     utils.sortableItem(listItem,(item) => { pesoTotal(item.parentElement.id) })
     lista.appendChild(listItem)
     pesoTotal(target.name)
@@ -410,10 +371,10 @@ function pesoTotal (idLista) {
     for (let x = 0; x < filas.length; x++) {
         let pesos = filas[x].getElementsByClassName("pesos")[0].innerHTML
         ponderado = ponderado + parseFloat(pesos)
-        filas[x].getElementsByClassName("incremento")[0].innerHTML = ponderado.toFixed(2)
+        filas[x].getElementsByClassName("incremento")[0].innerHTML = showPeso(ponderado)
     }
 
-    grupo.parentElement.nextElementSibling.innerHTML = `Peso total : ${ponderado.toFixed(2)} Kg`
+    grupo.parentElement.nextElementSibling.innerHTML = `Peso total : ${showPeso(ponderado)} Kg`
 }
 
 const llenarListPremix = (listPremix) => {
@@ -423,7 +384,12 @@ const llenarListPremix = (listPremix) => {
     const inputs = (values) => {
             let elementos = "";
             for (let i = 1; i <= 3; i++) {
-                elementos += `<input type="checkbox" class="btn-check" id="G${i}_${values.codInsumo}" value='${JSON.stringify(values)}' name="grupo${i}" autocomplete="off">
+                const valores = {
+                    codInsumo:values.codInsumo,
+                    descripcion:values.descripcion,
+                    pesos:values.pesos
+                }
+                elementos += `<input type="checkbox" class="btn-check" id="G${i}_${values.codInsumo}" value='${JSON.stringify(valores)}' name="grupo${i}" autocomplete="off">
                                     <label class="btn btn-outline-secondary" for="G${i}_${values.codInsumo}">G${i}</label>`
                 
             }
@@ -440,12 +406,12 @@ const llenarListPremix = (listPremix) => {
     }
     
     listPremix.forEach((element) => {
-        incremento = incremento + element.batch
+        incremento = incremento + (element.pesos * Receta.factor)
         const itemList = `<li class="list-item border-secondary border border-3 px-2 py-1" name="${element.codInsumo}">
                             <div class="details fw-bold">
                                 <span class="descripcion">${element.descripcion}</span>
-                                <span class="pesos">${element.displayBatch}</span>
-                                <span class="incremento">${(incremento).toFixed(2)}</span>
+                                <span class="pesos">${showBatch(element.pesos)}</span>
+                                <span class="incremento">${showPeso(incremento)}</span>
                             </div>
                             <div class="d-flex align-items-center">
                                 <div class="btn-group btn-group-sm px-2" role="group">
@@ -457,42 +423,15 @@ const llenarListPremix = (listPremix) => {
         
         listInsumosPremix.innerHTML += itemList
     });
-    document.getElementById("pesoTotal").textContent = `Peso total : ${data.pesoTotalPorReceta.premix.toFixed(2)} Kg`
-}
-
-const borderColor = { danger:"border-danger",warning:"border-warning",primary:"border-primary",secondary:"border-secondary" }
-const btnOutline = {danger:"btn-outline-danger",warning:"btn-outline-warning",primary:"btn-outline-primary",secondary:"btn-outline-secondary"}
-
-const claseDeEstilo = (grupo) => {
-   
-    let className = {}
-    switch (grupo) {
-
-        case "grupo1":
-            className = {border:borderColor.danger,btnBorder:btnOutline.danger}
-            break;
-
-        case "grupo2":
-            className = {border:borderColor.warning,btnBorder:btnOutline.warning}
-            break;
-
-        case "grupo3":
-            className = {border:borderColor.primary,btnBorder:btnOutline.primary}
-            break;    
-    
-        default:
-            className = {border:borderColor.secondary,btnBorder:btnOutline.secondary}
-            break;
-    }
-    return className
+    document.getElementById("pesoTotal").textContent = `Peso total : ${Receta.pesoInsumosReceta.premix.toFixed(2)} Kg`
 }
 
 function changeThemeItem(querySelector,oldTheme,newTheme){
 
     const listInsumosPremix = document.getElementById("listInsumosPremix")
     const item = listInsumosPremix.querySelector(querySelector)
-    const oldBorder = claseDeEstilo(oldTheme)
-    const newBorder = claseDeEstilo(newTheme)
+    const oldBorder = utils.claseDeEstilo(oldTheme)
+    const newBorder = utils.claseDeEstilo(newTheme)
 
     item.classList.replace(oldBorder.border,newBorder.border)
     const groupCheckbox = item.querySelectorAll("label")
@@ -507,6 +446,7 @@ function deleteItemList(e) {
     const id = e.name.slice(3,e.name.length)
     
     if(isNaN(id) === false){
+        
         const checkBox = document.getElementById(e.name)
         removeItemList(checkBox.name,id)
         changeThemeItem(`[name='${id}']`,checkBox.name,"default")
@@ -519,13 +459,3 @@ function deleteItemList(e) {
 }
 
 utils.draggable({drag:".draggable",grab:".modal-header"})
-
-
-
-
-
-
-
-
-
-

@@ -2,10 +2,49 @@ const utils = (()=>{
     
     feather.replace({ 'aria-hidden': 'true' })
     const self = this
+    const borderColor = { danger:"border-danger",warning:"border-warning",primary:"border-primary",secondary:"border-secondary" }
+    const btnOutline = {danger:"btn-outline-danger",warning:"btn-outline-warning",primary:"btn-outline-primary",secondary:"btn-outline-secondary"}
+
+    self.toBatch = (peso,factorPesaje) => {
+        const batch = peso * factorPesaje
+        return Math.round(batch *100) / 100
+    }
+
+    self.toDecimal = (number)=>{
+        return Math.round(number *100) / 100
+    }
+
+    self.pesoACadena = (peso) => {
+        return peso.toFixed(2)
+    }
+
+    self.claseDeEstilo = (grupo) => {
+        let className = {}
+        switch (grupo) {
+
+            case "grupo1":
+                className = {border:borderColor.danger,btnBorder:btnOutline.danger}
+                break;
+
+            case "grupo2":
+                className = {border:borderColor.warning,btnBorder:btnOutline.warning}
+                break;
+
+            case "grupo3":
+                className = {border:borderColor.primary,btnBorder:btnOutline.primary}
+                break;    
+        
+            default:
+                className = {border:borderColor.secondary,btnBorder:btnOutline.secondary}
+                break;
+        }
+        return className
+    }
 
     self.percent = (value,base) => {
-        const valor = (value * 100) / base
-        const porcent = valor != 100 ? valor.toFixed(2)+"%" : valor+"%"
+        const valor = (value / base) * 100
+        const tenth = Math.round(valor *100) / 100
+        const porcent =  tenth.toFixed(2)+"%"
         return porcent
     }
 
@@ -103,7 +142,34 @@ const utils = (()=>{
             drag.style.top = 0 + "px"
         })
     }
-    
+    self.insumosDeMuestra = {
+    premix:[
+                {descripcion:"insumo1",pesos:2.5},
+                {descripcion:"insumo2",pesos:2.5},
+                {descripcion:"insumo3",pesos:2.5},
+                {descripcion:"insumo4",pesos:2.5},
+                {descripcion:"insumo5",pesos:2.5},
+                {descripcion:"insumo6",pesos:2.5},
+                {descripcion:"insumo7",pesos:2.5},
+                {descripcion:"insumo8",pesos:2.5},
+                {descripcion:"insumo9",pesos:2.5},
+                {descripcion:"insumo10",pesos:2.5}
+            ],
+    medios:[
+                {descripcion:"insumo11",pesos:7.5},
+                {descripcion:"insumo12",pesos:7.5},
+                {descripcion:"insumo13",pesos:7.5},
+                {descripcion:"insumo14",pesos:7.5},
+                {descripcion:"insumo15",pesos:7.5},
+                {descripcion:"insumo16",pesos:7.5}
+            ],
+    liquidos:[{descripcion:"insumo17",pesos:20}],
+    macros:[
+                {descripcion:"insumo18",pesos:600},
+                {descripcion:"insumo19",pesos:140},
+                {descripcion:"insumo20",pesos:50}
+             ],
+  }
     return self
 
 })()

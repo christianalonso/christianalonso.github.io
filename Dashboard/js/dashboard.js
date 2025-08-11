@@ -1,58 +1,37 @@
 const graphicPie = (()=>{
 
-  console.log("Graphics is loaded !!")
   const grph = this
   const ctx = document.getElementById('myChart');
+
+  
 
   let myDataChart = {
       labels: ['Premix','Medios','Liquidos','Macros'],
       datasets: [
           {
             label: "Premix",
-            data:[
-                {descripcion:"insumo1",batch:10,displayBatch:"10.00"},
-                {descripcion:"insumo2",batch:10,displayBatch:"10.00"},
-                {descripcion:"insumo3",batch:10,displayBatch:"10.00"},
-                {descripcion:"insumo4",batch:10,displayBatch:"10.00"},
-                {descripcion:"insumo5",batch:10,displayBatch:"10.00"},
-                {descripcion:"insumo6",batch:10,displayBatch:"10.00"},
-                {descripcion:"insumo7",batch:10,displayBatch:"10.00"},
-                {descripcion:"insumo8",batch:10,displayBatch:"10.00"},
-                {descripcion:"insumo9",batch:10,displayBatch:"10.00"},
-                {descripcion:"insumo10",batch:10,displayBatch:"10.00"}
-            ],
+            data:utils.insumosDeMuestra.premix,
             lineTension:0,
             borderWidth: 1,
             backgroundColor:'rgba(153, 102, 255, 1)'
           },
           {
             label: "Medios",
-            data:[
-                {descripcion:"insumo11",batch:30,displayBatch:"30.00"},
-                {descripcion:"insumo12",batch:30,displayBatch:"30.00"},
-                {descripcion:"insumo13",batch:30,displayBatch:"30.00"},
-                {descripcion:"insumo14",batch:30,displayBatch:"30.00"},
-                {descripcion:"insumo15",batch:30,displayBatch:"30.00"},
-                {descripcion:"insumo16",batch:30,displayBatch:"30.00"}
-            ],
+            data:utils.insumosDeMuestra.medios,
             lineTension:0,
             borderWidth: 1,
             backgroundColor:'rgba(75, 192, 192, 1)'
           },
           {
             label: "Liquidos",
-            data:[{descripcion:"insumo17",batch:80,displayBatch:"80"}],
+            data:utils.insumosDeMuestra.liquidos,
             lineTension:0,
             borderWidth: 1,
             backgroundColor:'rgba(255, 26, 104, 1)'
           },
           {
             label: "Macros",
-            data:[
-                {descripcion:"insumo18",batch:2400,displayBatch:"2400.00"},
-                {descripcion:"insumo19",batch:960,displayBatch:"960.00"},
-                {descripcion:"insumo20",batch:200,displayBatch:"200.00"}
-             ],
+            data:utils.insumosDeMuestra.macros,
             lineTension:0,
             borderWidth: 1,
             backgroundColor:'rgba(255, 159, 64, 1)'
@@ -69,7 +48,7 @@ const graphicPie = (()=>{
         responsive: true,
         maintainAspectRatio: false,
         parsing:{
-          key:"batch"
+          key:"pesos"
         },
         scales: {
           y: {
@@ -93,14 +72,13 @@ const graphicPie = (()=>{
                       lineWidth: 0
                     }
                 })
-                let total = 0
+                let {macros,medios,premix,liquidos} = Receta.pesoInsumosReceta 
 
-                for (const key in data.pesoTotalPorReceta) {
-                    total = total + data.pesoTotalPorReceta[key]
-                }
+                let totalInsumos = utils.toDecimal(macros+medios+premix+liquidos)
+                
 
                 legends.push({
-                  text:`% Total : ${ utils.percent(total,4000) }`,
+                  text:`% Total : ${ utils.percent(totalInsumos,Receta.pesoTotalReceta) }`,
                   fillStyle: "#4CA771",
                   lineWidth: 0
                 })
@@ -117,8 +95,7 @@ const graphicPie = (()=>{
                 size:13
               },
               formatter: (value) => {
-                  
-                  return utils.percent(value.batch,4000)
+                  return utils.percent(value.pesos * 4,Receta.pesoTotalReceta)
               }
           },
           tooltip:{
@@ -127,14 +104,18 @@ const graphicPie = (()=>{
                         return tooltipItems[0].dataset.label
                     },
                     label: function(context) {
-                        return ` ${context.raw.descripcion} : ${context.raw.displayBatch} kg`
+                        return ` ${context.raw.descripcion} : ${ utils.pesoACadena(utils.toBatch(context.raw.pesos,4))  } kg`
                     },
                     footer:function(context){
+                      
                         const key = context[0].dataset.label
-                        const pesoTotal = data.pesoTotalPorReceta[key.toLowerCase()].toFixed(2)
-                        return [`% en Receta: ${utils.percent(context[0].parsed,4000)}`,
-                        `% Total ${key} : ${utils.percent(pesoTotal,4000)}`,
-                        `Peso Total ${key} : ${pesoTotal} kg`
+                        const pesoTotal = Receta.pesoInsumosReceta[key.toLowerCase()]
+                        const batch = context[0].raw.pesos * 4
+                        return [
+                            `% en ${key} : ${utils.percent(batch,pesoTotal)}`,
+                            `% en Receta : ${utils.percent(batch,Receta.pesoTotalReceta)}`,
+                            `% Total ${key} : ${utils.percent(pesoTotal,Receta.pesoTotalReceta)}`,
+                            `Peso Total ${key} : ${utils.pesoACadena(pesoTotal)} kg`
                         ]
                     }
                 }

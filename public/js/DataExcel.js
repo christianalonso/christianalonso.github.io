@@ -4,18 +4,32 @@ class DataExcel{
         this.insumos = insumos();
         this.data = []
         this.receta = []
-        this.insumoNoRegistrado=[]
+        this.insumoNoRegistrado
+        this.formmula = []
     }
-    pesoTotalPorReceta = {
+
+    factor = 4
+    pesoTotalReceta = 4000
+    pesoInsumosReceta = {
         macros:0,
         medios:0,
         premix:0,
         liquidos:0,
     }
-    factor = 4
 
-    init = (cont) =>{
-        const workbook = XLSX.read(cont);
+    insumosReceta = {
+        macros:[],
+        medios:[],
+        premix:[],
+        liquidos:[],
+    }
+
+    shortNameTipoInsumo = ["MA","ME","PE","LI"]
+    nombresTipoInsumo = ["macros","medios","premix","liquidos"]
+    
+
+    cargarArchivoExcel = (file) => {
+        const workbook = XLSX.read(file);
         const sheet = workbook.Sheets[workbook.SheetNames[0]];  
         const content = XLSX.utils.sheet_to_json(sheet , {
                     header: [
@@ -29,69 +43,91 @@ class DataExcel{
                     ]
                 });
         this.data = content;
-        const rows = this.data.slice(1,this.data.length)
-        
-        this.receta = rows.map((items) => {
-            const row = items
-            const pesoBatch = items.pesos * this.factor
-            row.batch = pesoBatch
-            row.displayBatch = pesoBatch.toFixed(2)
+        this.#prepareData();
+    }
 
+    #prepareData = () =>{
+        
+        this.insumoNoRegistrado = []
+        this.formmula = this.data.slice(1,this.data.length)
+        this.formmula.forEach((items) => {
+            
             if(this.buscarInsumo(items.codInsumo) === undefined){
                 this.insumoNoRegistrado.push(items) 
             }
-            
-            return row
-        });
 
+        });
+        
+    }
+
+    prepararReceta = (codPT) => {
+        
+        for (let i = 0; i < this.nombresTipoInsumo.length; i++) {
+            
+            this.insumosReceta[this.nombresTipoInsumo[i]] = this.getTiposDeInsumos(codPT,this.shortNameTipoInsumo[i])
+
+            const pesoTotalInsumos = this.insumosReceta[this.nombresTipoInsumo[i]]
+                            .reduce((collector,{pesos}) => {
+                               
+                                return collector + (pesos * this.factor)
+                            },0)
+            this.pesoInsumosReceta[this.nombresTipoInsumo[i]] = Math.round(pesoTotalInsumos * 100) / 100
+        }
+        
     }
 
     rows = () =>{
-        return this.receta  
+        return this.formmula  
     }
 
     header = () =>{
         return Object.values(this.data[0]);
     }
 
-    getUniquesCode = () =>{
+    getRecetas = () =>{
         
-        const arr = this.rows();
-        let codes = [ { codPT:arr[0].codPT , receta:arr[0].receta } ]
-        let exists = true
+        const formula = this.rows();
+        const recetas = [ { codPT:formula[0].codPT , receta:formula[0].receta } ]
+       
+        formula.forEach((row)=>{
+            
+            const flag = recetas.find((line) => line.codPT === row.codPT )
 
-        for (let x = 0; x < arr.length; x++) { 
-
-            for (let y = 0; y < codes.length; y++) {
-                
-                if(codes[y].codPT === arr[x].codPT){
-                    exists = false
-                }else{
-                    exists = true
-                }
+            if(flag===undefined){
+                recetas.push({ codPT:row.codPT , receta:row.receta })
             }
-            if(exists){
-                codes.push({ codPT:arr[x].codPT , receta:arr[x].receta })
-            }
-        }
-        return codes
+            
+        })
+        return recetas
     }
 
-    filterProduct = (id) =>{
+    getReceta = (codPT) =>{
+        let total = 0
+        const filterById = (obj) => {
 
-        const result = this.rows().filter( (element) => element.codPT === id );
+            if(obj.codPT === codPT){
+                total = total + (obj.pesos * 4)
+                return true
+            }else{
+                return false
+            }
+
+        }
+
+        const result = this.rows().filter( filterById );
+        this.pesoTotalReceta = Math.round(total *100) / 100
         return result
     
     }
 
     buscarInsumo = (codInsumo) => {
-        const insumo = this.insumos.find(({CODIGO}) => CODIGO === codInsumo)
+        const insumo = this.insumos.find(({CODIGO}) => CODIGO == codInsumo)
         return insumo
     }
 
-    filterTypeInsumo = (idReceta,tipoInsumo) => {
+    getTiposDeInsumos = (codPT,tipoInsumo) => {
 
-        const receta = this.filterProduct(idReceta)
+        const receta = this.getReceta(codPT)
         const insumos = this.insumos.filter(({TIPO}) => TIPO === tipoInsumo)
         
         const potentialMatch = (item) => {
@@ -112,6 +148,8 @@ class DataExcel{
 
 }
 
-const data = new DataExcel;
+const Receta = new DataExcel;
+
+
 
 /** GRAFICOS DINAMICOS */
