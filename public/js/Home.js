@@ -27,7 +27,7 @@ btnAddNewPremix.addEventListener("click",(e)=>{
     const pesoInsumo = document.getElementById("txtPesoInsumo")
     const borderColor = utils.claseDeEstilo(e.target.value)
 
-    addItemList(borderColor.border,{
+    addItem(borderColor.border,{
         codInsumo:"G0_"+nombreInsumo,
         descripcion:nombreInsumo.value.toUpperCase(),
         pesos: pesoInsumo.value
@@ -262,74 +262,87 @@ function llenarTablaReceta(codPT){
 
 const listInsumosPremix = document.getElementById("listInsumosPremix")
 
-listInsumosPremix.addEventListener("click",(e) => {
+const handleAdditem = (e) => {
     
     if(e.target.tagName === "INPUT"){
 
-        let target = e.target
-        let value = JSON.parse(target.value)
-        let checkboxes = [...target.parentElement.children]
-        let edit = -1
-        let theme = target.name
-        let oldTheme = ""
-        
-        /* SELECCIONAR SOLO UN CHECKBOX */
+        const boxes = checkBoxes(e)
+        const switchGroup =  boxsChecked(boxes)
+        const itemData = JSON.parse(e.target.value)
 
-        checkboxes.forEach((cbox,index) => {
-            if(cbox !== target){
-                if(cbox.checked){
-                    edit=index
-                }
-                cbox.checked = false
-            }
-        });
-
-        oldTheme = checkboxes[edit] === undefined ? "default" : checkboxes[edit].name
-        if(target.checked === false){
-            oldTheme = target.name
-            theme= "default"
-        }
-        const className = utils.claseDeEstilo(target.name)
-        changeThemeItem(`[name='${target.id.slice(3,target.id.length)}']`,oldTheme,theme)
-       
-        /** EDITAR */   
-        
-        if(edit >= 0){
-            const toMove = document.getElementById(value.codInsumo)
-            const btnDeleteItem = toMove.querySelector("button") 
-            btnDeleteItem.name = target.id
-            const originFromToMove = toMove.parentElement.id
-            const destiny = document.getElementById(target.name)
-
-            destiny.appendChild(toMove)
-            pesoTotal(originFromToMove)
-            toMove.classList.replace(toMove.classList[1],className.border)
-            pesoTotal(target.name)
-            window.scrollTo(0, document.body.scrollHeight);
-
+        /** Cambiar de grupo al item **/
+        if(switchGroup.length === 2){
+            ChangeGroup(switchGroup,e.target)
+            const oldBox = switchGroup.find((box) => box !== e.target)
+            changeThemeItem(`[name='${itemData.codInsumo}']`,oldBox.name,e.target.name)
         }
 
-        /* AGREGAR */
-        
-        if(target.checked && edit == -1 ){
-            addItemList(className.border,value,target)
+        unCheck(boxes,e.target)
+
+        /** Agregar item **/
+        if(switchGroup.length === 1){
+            addItem(itemData,e.target)
+            changeThemeItem(`[name='${itemData.codInsumo}']`,"",e.target.name)
         }
 
-        /** ELIMINAR  */
+        /** Eliminar item **/
+        if(switchGroup.length === 0){
+            removeItemList(e.target.name,itemData.codInsumo)
+            changeThemeItem(`[name='${itemData.codInsumo}']`,e.target.name,"")
+        }
+    }
+}
 
-        if(target.checked === false){
-            removeItemList(target.name,value.codInsumo)
+const ChangeGroup = (boxsChecked,target) => {
+
+    const dataItem = JSON.parse(target.value)
+    const item = document.getElementById(dataItem.codInsumo)
+    const btnDelete = item.querySelector("button")
+    btnDelete.name = target.id
+
+    document.querySelector(`#${target.name}`).appendChild(item)
+
+    for (const box of boxsChecked) {
+        pesoTotal(box.name)
+    }
+
+}
+
+const checkBoxes = (e) => {
+
+    const parent = e.target.parentElement
+    return parent.querySelectorAll("input")
+
+}
+
+const unCheck = (checkBoxes,target) =>{
+    
+    for (const current of checkBoxes) {
+        if(current !== target){
+            current.checked = false
         }
     }
 
-});
+}
 
-function addItemList(colorBorde,data,target){
+const boxsChecked = (checkBoxes) => {
+    
+    const boxes = [...checkBoxes]
+    const boxsChecked = boxes.filter((box) => {
+        return box.checked
+    })
+    return boxsChecked
+
+}
+
+listInsumosPremix.addEventListener("click",handleAdditem);
+
+function addItem(data,target){
 
     let lista = document.getElementById(target.name)
     const listItem = Object.assign(document.createElement("li"),{
         id:data.codInsumo,
-        className: `list-item ${colorBorde} border border-3 py-1 px-1`,
+        className: `list-item py-1 px-1`,
         draggable:true
     })
 

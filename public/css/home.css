@@ -39,6 +39,18 @@
 .list-item.dragging :where(.details,.d-flex){
     opacity: 0;
 }
+#grupo1 > li{
+    border: 3px solid;
+    border-color: #dc3545;
+}
+#grupo2 li{
+    border: 3px solid;
+    border-color: #ffc107;
+}
+#grupo3 > li{
+    border: 3px solid;
+    border-color: #0d6efd;
+}
 /* tabla pdf **/
 #toPrint{
     position: absolute;
